@@ -4,6 +4,8 @@ import java.util.Properties
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("com.google.devtools.ksp")
+    id("kotlin-parcelize")
 }
 
 android {
@@ -47,7 +49,7 @@ android {
         buildConfig = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
+        kotlinCompilerExtensionVersion = "1.5.7"
     }
     packaging {
         resources {
@@ -96,4 +98,10 @@ dependencies {
     //di
     implementation("io.insert-koin:koin-android:3.4.3")
     implementation("io.insert-koin:koin-androidx-compose:3.4.3")
+
+    //nav
+    val composeDestinations = "1.9.57"
+    implementation("io.github.raamcosta.compose-destinations:core:$composeDestinations")
+    implementation("io.github.raamcosta.compose-destinations:animations-core:$composeDestinations")
+    ksp("io.github.raamcosta.compose-destinations:ksp:$composeDestinations")
 }

@@ -53,18 +53,22 @@ class CurrencyExchangeUseCase(
         fromValue: BigDecimal,
         toCurrency: String,
         toValue: BigDecimal,
-    ): Result<Boolean> {
+    ): Result<BigDecimal> {
         return runCatching {
             val currentFromBalance = userBalances.getOrDefault(fromCurrency, BigDecimal.ZERO)
             val currentToBalance = userBalances.getOrDefault(toCurrency, BigDecimal.ZERO)
+
+            val fee = feeCalculator.calculateCommission(fromValue, conversionCount)
+            val amountAfterFee = (currentFromBalance - fee).coerceAtLeast(BigDecimal.ZERO)
+
             val newFromCurrencyBalance =
-                (currentFromBalance - fromValue).coerceAtLeast(BigDecimal.ZERO)
+                (amountAfterFee - fromValue).coerceAtLeast(BigDecimal.ZERO)
 
             userBalances[toCurrency] = currentToBalance + toValue
             userBalances[fromCurrency] = newFromCurrencyBalance
 
-            conversionCount = conversionCount++
-            true
+            conversionCount += 1
+            fee
         }
     }
 

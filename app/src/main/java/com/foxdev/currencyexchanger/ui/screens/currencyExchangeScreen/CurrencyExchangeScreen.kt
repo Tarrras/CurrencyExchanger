@@ -18,25 +18,96 @@ import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.foxdev.currencyexchanger.R
+import com.foxdev.currencyexchanger.ui.destinations.CurrencyPickerScreenDestination
+import com.foxdev.currencyexchanger.ui.destinations.ErrorDialogScreenDestination
+import com.foxdev.currencyexchanger.ui.destinations.ExchangeSuccessDialogScreenDestination
+import com.foxdev.currencyexchanger.ui.dialogs.exchangeSuccess.ExchangeSuccessInfo
 import com.foxdev.currencyexchanger.ui.screens.currencyExchangeScreen.components.CurrencyExchangeCard
 import com.foxdev.currencyexchanger.ui.screens.currencyExchangeScreen.components.UserBalancesRow
+import com.foxdev.currencyexchanger.ui.screens.currencyPicker.CurrencyPickerResult
+import com.foxdev.currencyexchanger.ui.screens.currencyPicker.CurrencyPickerScreenInfo
 import com.foxdev.currencyexchanger.ui.theme.CurrencyExchangerTheme
+import com.foxdev.currencyexchanger.utils.collectAsEffect
+import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import com.ramcosta.composedestinations.result.NavResult
+import com.ramcosta.composedestinations.result.ResultRecipient
 import org.koin.androidx.compose.getViewModel
 
 @Composable
+@Destination(start = true)
 fun CurrencyExchangeScreen(
-    viewModel: CurrencyExchangeViewModel = getViewModel()
+    viewModel: CurrencyExchangeViewModel = getViewModel(),
+    navigator: DestinationsNavigator,
+    resultRecipient: ResultRecipient<CurrencyPickerScreenDestination, CurrencyPickerResult>
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
+    resultRecipient.onNavResult { result ->
+        when (result) {
+            is NavResult.Canceled -> {}
+
+            is NavResult.Value -> {
+                val value = result.value
+                viewModel.handleUiEvent(
+                    event = CurrencyExchangeScreenUiEvent.SubmitCurrency(
+                        pickerType = value.pickerType,
+                        currency = value.selectedCurrency
+                    )
+                )
+            }
+        }
+    }
+
+    viewModel.uiIntent.collectAsEffect {
+        when (it) {
+            is CurrencyExchangeScreenUiIntent.OpenCurrencyPicker -> {
+                navigator.navigate(
+                    CurrencyPickerScreenDestination(
+                        CurrencyPickerScreenInfo(
+                            pickerType = it.pickerType,
+                            alreadySelectedCurrency = it.alreadySelectedCurrency,
+                            availableOption = it.availableOption
+                        )
+                    )
+                )
+            }
+
+            is CurrencyExchangeScreenUiIntent.ShowCurrencyConvertedDialog -> {
+                navigator.navigate(
+                    ExchangeSuccessDialogScreenDestination(
+                        ExchangeSuccessInfo(
+                            fromCurrency = it.fromCurrency,
+                            fromAmount = it.fromAmount,
+                            toCurrency = it.toCurrency,
+                            toAmount = it.toAmount,
+                            fee = it.fee,
+                        )
+                    )
+                )
+            }
+
+            is CurrencyExchangeScreenUiIntent.ShowErrorDialog -> {
+                navigator.navigate(
+                    direction = ErrorDialogScreenDestination(
+                        message = it.message.asString(context)
+                    ),
+                    onlyIfResumed = true
+                )
+            }
+        }
+    }
+
     CurrencyExchangeScreenContent(
         uiState = uiState,
         handleEvent = viewModel::handleUiEvent

@@ -1,6 +1,7 @@
 package com.foxdev.currencyexchanger.ui.screens.currencyExchangeScreen
 
 import androidx.compose.runtime.Immutable
+import com.foxdev.currencyexchanger.ui.screens.currencyPicker.CurrencyWithBalance
 import com.foxdev.currencyexchanger.utils.StringValue
 import java.math.BigDecimal
 
@@ -52,7 +53,7 @@ sealed interface CurrencyExchangeScreenUiIntent {
     data class OpenCurrencyPicker(
         val pickerType: PickerType,
         val alreadySelectedCurrency: String,
-        val availableOption: Map<String, BigDecimal>
+        val availableOption: List<CurrencyWithBalance>
     ) : CurrencyExchangeScreenUiIntent
 }
 

@@ -3,6 +3,7 @@ package com.foxdev.currencyexchanger.ui.screens.currencyExchangeScreen
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.foxdev.currencyexchanger.domain.useCase.CurrencyExchangeUseCase
+import com.foxdev.currencyexchanger.ui.screens.currencyPicker.CurrencyWithBalance
 import com.foxdev.currencyexchanger.utils.StringValue
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -80,7 +81,7 @@ class CurrencyExchangeViewModel(
                                     fromCurrency = fromUiState.currency,
                                     toCurrency = toUiState.currency,
                                     toAmount = toUiState.amount,
-                                    fee = uiState.feeInfo.second
+                                    fee = it.stripTrailingZeros().toPlainString()
                                 )
                             )
                         }.onFailure { error ->
@@ -135,7 +136,12 @@ class CurrencyExchangeViewModel(
                 CurrencyExchangeScreenUiIntent.OpenCurrencyPicker(
                     pickerType = pickerType,
                     alreadySelectedCurrency = selectedCurrency,
-                    availableOption = currenciesToChoose
+                    availableOption = currenciesToChoose.map { (key, value) ->
+                        CurrencyWithBalance(
+                            balance = value.stripTrailingZeros().toPlainString(),
+                            currency = key
+                        )
+                    }
                 )
             )
         }
